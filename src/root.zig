@@ -1,23 +1,75 @@
-//! By convention, root.zig is the root source file when making a library.
-const std = @import("std");
+//! ZirconOS Classic — Windows 2000 GDI Desktop Theme
+//! Library root: re-exports all public modules for use by the kernel
+//! display compositor and the standalone desktop shell executable.
+//!
+//! Architecture follows ReactOS NT5 desktop model:
+//!   winlogon → shell (explorer) → GDI compositor → desktop/taskbar/startmenu
+//! No DWM compositor — all rendering is flat 3D beveled GDI-style.
 
-pub fn bufferedPrint() !void {
-    // Stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
+pub const theme = @import("theme.zig");
+pub const desktop = @import("desktop.zig");
+pub const taskbar = @import("taskbar.zig");
+pub const startmenu = @import("startmenu.zig");
+pub const window_decorator = @import("window_decorator.zig");
+pub const shell = @import("shell.zig");
+pub const controls = @import("controls.zig");
+pub const winlogon = @import("winlogon.zig");
+pub const theme_loader = @import("theme_loader.zig");
+pub const resource_loader = @import("resource_loader.zig");
+pub const font_loader = @import("font_loader.zig");
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+// ── Theme identity ──
 
-    try stdout.flush(); // Don't forget to flush!
+pub const theme_name = "Classic";
+pub const theme_version = "1.0.0";
+pub const theme_description = "ZirconOS Classic — Windows 2000 style flat 3D beveled GDI desktop with no compositor effects";
+
+// ── Available theme variants ──
+
+pub const available_themes = [_][]const u8{
+    "classic_standard",
+    "classic_storm",
+    "classic_spruce",
+    "classic_lilac",
+    "classic_desert",
+    "highcontrast_black",
+    "highcontrast_white",
+};
+
+// ── Quick accessors for the kernel display compositor ──
+
+pub fn getDesktopBackground() u32 {
+    return theme.getActiveDesktopBg();
 }
 
-pub fn add(a: i32, b: i32) i32 {
-    return a + b;
+pub fn getTaskbarHeight() i32 {
+    return theme.Layout.taskbar_height;
 }
 
-test "basic add functionality" {
-    try std.testing.expect(add(3, 7) == 10);
+pub fn getTitlebarHeight() i32 {
+    return theme.Layout.titlebar_height;
+}
+
+pub fn isDwmEnabled() bool {
+    return false;
+}
+
+pub fn initClassicShell() void {
+    shell.initShell();
+}
+
+pub fn switchTheme(cs: theme.ColorScheme) void {
+    shell.switchTheme(cs);
+}
+
+pub fn switchThemeByName(name: []const u8) bool {
+    return shell.switchThemeByName(name);
+}
+
+pub fn getActiveScheme() theme.ColorScheme {
+    return theme.getActiveScheme();
+}
+
+pub fn getAvailableThemeCount() usize {
+    return theme_loader.getThemeCount();
 }
