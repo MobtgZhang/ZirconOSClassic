@@ -1,158 +1,63 @@
-# ZirconOSClassic - Windows 2000 经典桌面主题
+# ZirconOS Classic
 
-## 概述
+用 **Zig** 实现的 **NT 5.0（Windows 2000 时代）风格** 操作系统线路，参考 [ZirconOS](https://github.com/MobtgZhang/ZirconOS) 的内核与引导设计。内核源码位于根目录 **`src/`**（与上游仓库布局一致）。
 
-ZirconOSClassic 是 ZirconOS 操作系统的 **Windows Classic（经典）** 风格桌面环境实现。
-Classic 主题继承自 Windows 95/98/2000 的经典界面设计，以灰色为主色调，
-使用 3D 凸起/凹陷边框模拟物理按钮效果，是 Windows 图形界面历史最悠久的视觉风格。
+## 目标特性
 
-本模块参考 [ReactOS](https://github.com/reactos/reactos) 的桌面架构设计，
-目标是实现一套极简、高效、低资源占用的经典风格桌面 Shell。
-
-## 设计风格
-
-### Classic 核心视觉特征
-
-| 特征 | 说明 |
-|------|------|
-| **3D 边框** | 按钮和窗口使用高光/阴影模拟凸起和凹陷效果 |
-| **灰色基调** | 系统背景 `#C0C0C0`（银灰色），窗口背景 `#FFFFFF` |
-| **直角窗口** | 所有窗口、按钮、菜单均为直角矩形 |
-| **像素级精准** | 1px 边框线，清晰的控件边界 |
-| **渐变标题栏** | 活动窗口：深蓝 `#000080` → 浅蓝 `#1084D0` |
-| **MS Sans Serif** | 系统默认字体 MS Sans Serif 8pt |
-
-### 经典配色方案
-
-| 元素 | 颜色值 | 说明 |
-|------|--------|------|
-| 桌面背景 | `#008080`（Windows 95）/ `#3A6EA5`（Win2000） | 经典绿松石 / 蓝色 |
-| 窗口背景 | `#FFFFFF` | 白色 |
-| 按钮/对话框 | `#C0C0C0` | 银灰色 |
-| 3D 高光 | `#FFFFFF` | 白色（凸起左上角） |
-| 3D 阴影 | `#808080` / `#404040` | 灰色（凹陷右下角） |
-| 活动标题栏 | `#000080` → `#1084D0` | 深蓝色渐变 |
-| 非活动标题栏 | `#808080` → `#C0C0C0` | 灰色渐变 |
-| 选中/高亮 | `#000080`（背景）+ `#FFFFFF`（文字） | 蓝底白字 |
-| 菜单栏 | `#C0C0C0` | 灰色，黑色文字 |
-
-### 与其他主题的关键差异
-
-- **无透明度**：完全不透明，0 模糊/混合开销
-- **无圆角**：所有元素均为直角矩形
-- **无动画**：窗口操作即时响应，无过渡动画
-- **最低资源占用**：无 GPU 需求，纯 CPU 2D 渲染
-- **单栏开始菜单**：垂直菜单列表（非 XP 双栏）
-
-## 模块架构
-
-```
-ZirconOSClassic/
-├── src/
-│   ├── root.zig              # 库入口，导出所有公共模块
-│   ├── main.zig              # 可执行入口 / 集成测试
-│   ├── theme.zig             # Classic 主题定义（3D 边框颜色、尺寸）
-│   ├── winlogon.zig          # 用户登录管理（Ctrl+Alt+Del 登录对话框）
-│   ├── desktop.zig           # 桌面管理器（壁纸、图标、右键菜单）
-│   ├── taskbar.zig           # 任务栏（开始按钮、任务按钮、托盘、时钟）
-│   ├── startmenu.zig         # 开始菜单（单栏级联菜单）
-│   ├── window_decorator.zig  # 窗口装饰器（经典标题栏、3D 边框）
-│   ├── shell.zig             # 桌面 Shell 主程序（explorer.exe 风格）
-│   └── controls.zig          # Classic 风格控件（3D 按钮、文本框）
-├── resources/
-│   ├── wallpapers/           # 桌面壁纸（纯色 / 简单图案）
-│   ├── icons/                # 系统图标（16 色经典风格）
-│   ├── ui/                   # UI 组件素材
-│   ├── cursors/              # 鼠标光标（经典箭头）
-│   └── MANIFEST.md           # 资源清单
-├── build.zig
-├── build.zig.zon
-└── README.md
-```
-
-## 计划实现的组件
-
-### WinLogon（用户登录）
-- **Ctrl+Alt+Del 登录**：经典安全登录对话框
-- **用户名/密码框**：标准 3D 文本输入控件
-- **域选择**：下拉选择框（本机/域）
-- **关机按钮**：对话框底部
-
-### Desktop（桌面管理器）
-- 纯色壁纸（默认绿松石 `#008080` 或蓝色 `#3A6EA5`）
-- 16 色经典图标（我的电脑、网上邻居、回收站）
-- 右键菜单（排列图标、刷新、属性）
-
-### Taskbar（任务栏）
-- 灰色实心任务栏（带 3D 凸起边框）
-- **开始按钮**：凸起灰色按钮 + Windows 标志 + "Start" 文字
-- 任务按钮（带 3D 按下效果）
-- 系统托盘（时钟、音量）
-- Quick Launch 区域
-
-### Start Menu（开始菜单）
-- **单栏级联菜单**：程序 → 子菜单展开
-- 标准菜单项：程序、文档、设置、查找、帮助、运行
-- 关机选项（关机/重启/注销）
-- 左侧蓝色/灰色垂直条纹 + "Windows 2000" 文字
-
-### Window Decorator（窗口装饰器）
-- 渐变标题栏（深蓝 → 浅蓝）
-- 标题栏按钮（最小化/最大化/关闭，凹凸效果）
-- 3D 窗口边框（可拖拽调整大小）
-- 系统菜单（窗口图标点击）
-
-### Controls（UI 控件）
-- 3D 凸起按钮（正常/悬停/按下/禁用四态）
-- 3D 凹陷文本框
-- 经典复选框和单选按钮
-- 经典滚动条（带三角箭头）
-- 标准进度条（蓝色方块填充）
-
-## 与主系统集成
-
-ZirconOSClassic 通过以下内核子系统接口工作：
-
-1. **user32.zig** — 窗口管理 API
-2. **gdi32.zig** — 绘图 API（2D 基础图元即可）
-3. **subsystem.zig** (csrss) — 窗口站和桌面管理
-4. **framebuffer.zig** — 帧缓冲区显示驱动
-
-### 配置
-
-在 `config/desktop.conf` 中选择 Classic 主题：
-
-```ini
-[desktop]
-theme = classic
-color_scheme = windows2000   # windows95 | windows2000 | highcontrast
-shell = explorer
-```
+- **架构**：x86-64、AArch64、LoongArch64、RISC-V 64、MIPS64el（内核 ELF）。
+- **引导**：仅 **ZirconOS Boot Manager（ZBM）** — UEFI 应用 + BIOS **MBR/VBR/stage2**；**不使用 GRUB**。
+- **风格**：ZBM 文本菜单与字符串面向 **Windows 2000 / NT 5.0** 启动体验（见 `boot/zbm/uefi/main.zig`）。
+- **开发流程**：见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
 
 ## 构建
 
+需要 **Zig ≥ 0.15.2**。持久化构建选项请编辑根目录 **`build.conf`**（风格对齐 [ZirconOS `build.conf`](https://github.com/MobtgZhang/ZirconOS/blob/main/build.conf)）。
+
 ```bash
-cd 3rdparty/ZirconOSClassic
-zig build
-zig build test
+zig build                    # 默认 x86_64：kernel + zbm + uefi
+zig build -Darch=aarch64 kernel
+zig build -Darch=riscv64 kernel
+zig build -Darch=loongarch64 kernel
+zig build -Darch=mips64el kernel
+
+make                         # 默认 = make run：构建后 QEMU UEFI 启动（见 build.conf）
+make build                   # 仅 zig build，不启动虚拟机
+make clean                   # 删除 zig-out 与 .zig-cache
 ```
 
-## 开发状态
+`make run` 的固件：x86_64 / AArch64 使用 [EDK2 Nightly](https://retrage.github.io/edk2-nightly/)（`firmware/edk2-nightly/`）；**LoongArch64** 使用龙芯 [LoongArchVirtMachine](https://github.com/loongson/Firmware/tree/main/LoongArchVirtMachine) 的 `QEMU_EFI.fd` / `QEMU_VARS.fd`（`firmware/loongarch-virt/`，`qemu_run.sh` 用 **`-bios`** 启动，与 `virt` 机型一致）。可事先 `make fetch-edk2`。
 
-当前为项目框架阶段，计划按以下顺序实现：
+产物（默认前缀 `zig-out/bin/`）：`kernel`（ELF）、`zbm` 静态库（x86 BIOS）、x86/AArch64 UEFI 为 `zbmfw.efi`；LoongArch64 UEFI 需额外 `make loongarch-efi` 生成 `BOOTLOONGARCH64.EFI`（需 **loongarch64-linux-gnu-gcc** 与 **objcopy**；crt0/reloc/lds 已内置在 `boot/zbm/uefi/vendor/loongarch64/`，**无需**系统 gnu-efi 包）。
 
-1. `theme.zig` — Classic 3D 边框配色和尺寸常量
-2. `controls.zig` — 3D 凸起/凹陷控件（核心基础）
-3. `window_decorator.zig` — 经典标题栏和窗口边框
-4. `taskbar.zig` — 灰色实心任务栏
-5. `startmenu.zig` — 单栏级联开始菜单
-6. `desktop.zig` — 桌面管理器
-7. `winlogon.zig` — Ctrl+Alt+Del 登录界面
-8. `shell.zig` — Shell 集成
+```bash
+make run ARCH=loongarch64    # 构建 loongarch 内核 + ZBM EFI 并在 QEMU 中启动（需 qemu-system-loongarch64）
+```
 
-## 参考
+## 仓库布局（对齐 ZirconOS `src/`）
 
-- [ReactOS](https://github.com/reactos/reactos) — 开源 Windows 兼容操作系统
-- Windows 2000 / Windows Classic 视觉规范
-- [Win32 API 控件绘制](https://learn.microsoft.com/en-us/windows/win32/controls/buttons) — 经典控件文档
-- Microsoft UX Guidelines for Windows 2000
+```
+├── src/
+│   ├── main.zig              # 内核入口
+│   ├── config/               # 嵌入默认 *.conf + config.zig
+│   ├── arch/                 # x86_64, aarch64, riscv64, loongarch64, mips64el
+│   ├── hal/                  # 硬件抽象（串口、帧缓冲等）
+│   ├── drivers/video/        # 显示栈占位
+│   ├── ke/ mm/ ob/ ps/ se/   # NT 执行体、内存、对象、进程、安全（桩）
+│   ├── io/ lpc/ fs/ loader/  # I/O、LPC、文件系统、加载器（桩）
+│   ├── rtl/                  # klog
+│   ├── libs/                 # ntdll / kernel32 桩
+│   ├── servers/              # 进程服务、SMSS 桩
+│   ├── subsystems/win32/     # ntuser / ntgdi、x86_early（GRE）
+│   └── classic/              # Windows 2000 Classic 配色常量
+├── boot/zbm/                 # ZBM
+├── link/                     # 链接脚本
+└── docs/
+```
+
+## 与上游 ZirconOS 的关系
+
+子目录与职责与 [ZirconOS](https://github.com/MobtgZhang/ZirconOS) 一致；本仓库为 **NT 5.0 产品线** 精简实现 + 桩模块，完整功能请自上游分阶段移植。
+
+## 许可
+
+见 [`LICENSE`](LICENSE)。
