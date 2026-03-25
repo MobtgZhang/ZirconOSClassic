@@ -2,6 +2,10 @@
 
 用 **Zig** 实现的 **NT 5.0（Windows 2000 时代）风格** 操作系统线路，参考 [ZirconOS](https://github.com/MobtgZhang/ZirconOS) 的内核与引导设计。内核源码位于根目录 **`src/`**（与上游仓库布局一致）。
 
+## 系统截图
+
+![系统运行截图](asserts/screenshot.png)
+
 ## 目标特性
 
 - **架构**：x86-64、AArch64、LoongArch64、RISC-V 64、MIPS64el（内核 ELF）。
