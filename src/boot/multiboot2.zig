@@ -108,6 +108,10 @@ pub const BootInfo = struct {
     boot_mode: BootMode = .normal,
     desktop_theme: DesktopTheme = .none,
     fb_info: ?FramebufferInfo = null,
+    /// Multiboot2 ACPI tag 14/15 内嵌 RSDP 副本的**物理地址**（与 `mbi_phys` 同一地址空间）。
+    acpi_rsdp_phys: ?u64 = null,
+    /// Multiboot2 信息块自身物理基址（供 `ZirconBootContext` 记录）。
+    multiboot_info_phys: u64 = 0,
 
     pub fn getMmapEntry(self: BootInfo, i: usize) ?MmapEntry {
         if (i >= self.mmap_entry_count or self.mmap_entry_size < 24) return null;
@@ -127,6 +131,7 @@ pub fn parse(_: u32, phys_addr: usize) ?BootInfo {
         .mmap_ptr = undefined,
         .mmap_entry_count = 0,
         .mmap_entry_size = 0,
+        .multiboot_info_phys = @intCast(addr),
     };
 
     var offset: usize = 8;
@@ -184,6 +189,11 @@ pub fn parse(_: u32, phys_addr: usize) ?BootInfo {
                     .fb_type = fb_type_val,
                     .pixel_bgr = pixel_bgr,
                 };
+            },
+            .acpi_old, .acpi_new => {
+                if (tag_size >= 8 + 20) {
+                    info.acpi_rsdp_phys = @intCast(addr + offset + 8);
+                }
             },
             else => {},
         }

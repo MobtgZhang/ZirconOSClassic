@@ -22,7 +22,7 @@ pub fn initExecutive() void {
     const sys = "System";
     @memcpy(processes[0].name[0..sys.len], sys);
     proc_count = 1;
-    klog.info("PS: System process pid=%u (EPROCESS stub)", .{processes[0].pid});
+    klog.info("PS: System process pid=%u — 64-bit native only, no WOW64 (stub)", .{processes[0].pid});
 }
 
 pub fn processCount() usize {

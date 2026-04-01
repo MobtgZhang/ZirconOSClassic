@@ -11,7 +11,7 @@
 - **架构**：x86-64、AArch64、LoongArch64、RISC-V 64、MIPS64el（内核 ELF）。
 - **引导**：仅 **ZirconOS Boot Manager（ZBM）** — UEFI 应用 + BIOS **MBR/VBR/stage2**；**不使用 GRUB**。
 - **风格**：ZBM 文本菜单与字符串面向 **Windows 2000 / NT 5.0** 启动体验（见 `boot/zbm/uefi/main.zig`）。
-- **开发流程**：见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
+- **开发流程**：见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)；**合规与贡献**见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ## 构建
 
@@ -51,7 +51,7 @@ make run ARCH=loongarch64    # 构建 loongarch 内核 + ZBM EFI 并在 QEMU 中
 │   ├── rtl/                  # klog
 │   ├── libs/                 # ntdll / kernel32 桩
 │   ├── servers/              # 进程服务、SMSS 桩
-│   ├── subsystems/win32/     # ntuser / ntgdi、x86_early（GRE）
+│   ├── subsystems/zircon64/  # Zircon64 子系统：ntuser / ntgdi、GRE 早期路径
 │   └── classic/              # Windows 2000 Classic 配色常量
 ├── boot/zbm/                 # ZBM
 ├── link/                     # 链接脚本

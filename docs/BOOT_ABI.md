@@ -33,6 +33,7 @@ ZBM **应提供**：
 2. **类型 4 — basic memory info**：`mem_lower` / `mem_upper`（KB）。
 3. **类型 6 — memory map**：`entry_size = 24`，条目为 `base(8) + length(8) + type(4) + reserved(4)`；类型值与 Multiboot2 一致（可用 RAM = 1）。
 4. **类型 8 — framebuffer**（若 GOP 可用）：固定字节偏移解析，含 64 位物理地址、`pitch`、`width`、`height`、`bpp`、类型及可选扩展字节（BGR 标志）。
+5. **类型 14 / 15 — ACPI RSDP**（UEFI 配置表导出）：内嵌 `RSD PTR ` 结构副本；内核解析后得到 `acpi_rsdp_phys` 并填入 [`ZirconBootContext`](../src/boot/zircon_boot_context.zig)。
 
 **类型 0 — end** 结束标签。
 
@@ -40,7 +41,7 @@ UEFI 路径下 GOP 须在 **ExitBootServices 之前** 查询；信息块与 mmap
 
 ## 图形会话与输入（实现提示）
 
-- 帧缓冲标签存在时，内核 GRE 在 `subsystems/win32/gre_early.zig` 中初始化线性 FB；配色常量语义见 `docs/DEVELOPMENT.md`（**0xRRGGBB**）。
+- 帧缓冲标签存在时，内核 GRE 在 `subsystems/zircon64/gre_early.zig` 中初始化线性 FB；配色常量语义见 `docs/DEVELOPMENT.md`（**0xRRGGBB**）。
 - **x86_64**：PS/2 键盘/鼠标经 8042 + 8259 PIC，IRQ1 / IRQ12；QEMU 默认 `-machine q35`/`pc` 通常已提供 PS/2 鼠标，无需额外 `-device` 即可驱动当前 `ps2_mouse.zig` 桩。
 
 ## 参考实现位置

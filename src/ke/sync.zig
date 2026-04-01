@@ -39,6 +39,7 @@ pub const DispatcherEvent = struct {
 var g_system_lock: DispatcherMutex = .{};
 
 pub fn initExecutive() void {
+    @import("irql.zig").initExecutive();
     g_system_lock = DispatcherMutex.init();
     klog.info("KE: dispatcher mutex + event stubs ready", .{});
 }

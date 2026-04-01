@@ -1,9 +1,10 @@
 //! Syscall dispatch stub (Phase 2)
-//! int 0x80 vector 128；GRE 桌面 syscall 见 `subsystems/win32/win32_syscalls.zig`。
+//! int 0x80 vector 128；GRE 桌面 syscall 见 `subsystems/zircon64/zircon64_syscalls.zig`。
+//! 原生 `syscall`/`SYSRET` 表见 `zircon_syscall_table.zig`（`ZcServiceDescriptorTable`）。
 
 const klog = @import("../../rtl/klog.zig");
 const InterruptFrame = @import("../../ke/interrupt.zig").InterruptFrame;
-const gre_sc = @import("../../subsystems/win32/win32_syscalls.zig");
+const gre_sc = @import("../../subsystems/zircon64/zircon64_syscalls.zig");
 
 pub const STATUS_INVALID_PARAMETER: i64 = -1;
 

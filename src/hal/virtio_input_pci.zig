@@ -3,13 +3,13 @@
 //!
 //! 实例化：LoongArch 为 `Driver(pci_ecam, dcache)`；x86 将来可 `Driver(x86_64/pci.zig, x86_64/cache_fence.zig)` 枚举 PCI 时需扩展 `collectInputPci` 的总线范围。
 //!
-//! 软件光标概念（保存下层像素、移动时恢复再绘）由上层 [cursor_overlay.zig](../subsystems/win32/cursor_overlay.zig) 实现。
+//! 软件光标概念（保存下层像素、移动时恢复再绘）由上层 [cursor_overlay.zig](../subsystems/zircon64/cursor_overlay.zig) 实现。
 
 const std = @import("std");
 const dfs = @import("../config/desktop_fb.zig");
 const klog = @import("../rtl/klog.zig");
 const fb = @import("fb_console.zig");
-const ntuser = @import("../subsystems/win32/ntuser.zig");
+const ntuser = @import("../subsystems/zircon64/ntuser.zig");
 
 pub fn Driver(comptime Pci: type, comptime Fence: type) type {
     return struct {

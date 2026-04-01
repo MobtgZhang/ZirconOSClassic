@@ -2,7 +2,7 @@
 
 const portio = @import("portio.zig");
 const mouse = @import("ps2_mouse.zig");
-const ntuser = @import("../../subsystems/win32/ntuser.zig");
+const ntuser = @import("../../subsystems/zircon64/ntuser.zig");
 
 var e0_prefix: bool = false;
 

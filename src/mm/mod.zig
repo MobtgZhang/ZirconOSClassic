@@ -9,6 +9,8 @@ var global_frames: ?*frame.FrameAllocator = null;
 
 pub fn initExecutive(fa: *frame.FrameAllocator) void {
     global_frames = fa;
+    @import("pfn_database.zig").initExecutive();
+    @import("pagefault_stub.zig").initExecutive();
     klog.info("MM: Executive bound to frame allocator (used_frames=%u)", .{fa.used_frames});
 }
 

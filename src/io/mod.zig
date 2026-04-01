@@ -26,14 +26,31 @@ fn videoDispatch(_: *DEVICE_OBJECT, irp: *IRP) callconv(.c) u32 {
 
 var video_driver: DRIVER_OBJECT = undefined;
 var video_device: DEVICE_OBJECT = undefined;
+var disk_driver: DRIVER_OBJECT = undefined;
+var disk_device: DEVICE_OBJECT = undefined;
+
+fn diskDispatch(_: *DEVICE_OBJECT, irp: *IRP) callconv(.c) u32 {
+    klog.debug("IO: virtio-blk/AHCI FDO IRP major=%u (stub)", .{irp.major});
+    return IO_STATUS_SUCCESS;
+}
+
+pub fn IoAttachDeviceToDeviceStack(upper: *DEVICE_OBJECT, lower: *DEVICE_OBJECT) ?*DEVICE_OBJECT {
+    _ = .{ upper, lower };
+    klog.debug("IO: IoAttachDeviceToDeviceStack stub", .{});
+    return null;
+}
 
 pub fn initExecutive() void {
     video_driver = .{ .dispatch = videoDispatch };
-    video_device = .{ .name = "\\Device\\Video0", .driver = &video_driver };
-    klog.info("IO: IoMgr + Video0 FDO (IRP dispatch stub)", .{});
+    video_device = .{ .name = "\\Zircon\\Device\\Video0", .driver = &video_driver };
+    disk_driver = .{ .dispatch = diskDispatch };
+    disk_device = .{ .name = "\\Zircon\\Device\\Harddisk0", .driver = &disk_driver };
+    klog.info("IO: IoMgr + Video0 + Harddisk0 FDO (IRP dispatch stubs)", .{});
 
     var probe: IRP = .{ .major = 0x18, .minor = 0 }; // IRP_MJ_INTERNAL_DEVICE_CONTROL placeholder
     _ = IoCallDriver(&video_device, &probe);
+    var disk_irp: IRP = .{ .major = 0x03, .minor = 0 }; // read placeholder
+    _ = IoCallDriver(&disk_device, &disk_irp);
 }
 
 pub fn IoCallDriver(dev: *DEVICE_OBJECT, irp: *IRP) u32 {

@@ -693,7 +693,8 @@ fn loadAndBootKernel(out: anytype, bs: *uefi.tables.BootServices) void {
         return;
     };
 
-    const boot_info_addr = boot_info.buildBootInfo(bi_base, mmap, entries[selected].cmdline, gop_fb);
+    const acpi_rsdp = boot_info.findAcpiRsdp(uefi.system_table);
+    const boot_info_addr = boot_info.buildBootInfo(bi_base, mmap, entries[selected].cmdline, gop_fb, acpi_rsdp);
     puts(out, "    [*] Multiboot2 boot info ready\r\n");
 
     // ── Step 8: Exit boot services ──
@@ -702,7 +703,7 @@ fn loadAndBootKernel(out: anytype, bs: *uefi.tables.BootServices) void {
     bs.exitBootServices(uefi.handle, mmap.info.key) catch {
         // Key changed, retry
         const mmap2 = bs.getMemoryMap(@as([]align(@alignOf(uefi.tables.MemoryDescriptor)) u8, &mmap_buf)) catch return;
-        _ = boot_info.buildBootInfo(bi_base, mmap2, entries[selected].cmdline, gop_fb);
+        _ = boot_info.buildBootInfo(bi_base, mmap2, entries[selected].cmdline, gop_fb, acpi_rsdp);
         bs.exitBootServices(uefi.handle, mmap2.info.key) catch return;
     };
 

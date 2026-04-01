@@ -110,7 +110,7 @@ fn handleIrq(frame: *InterruptFrame, irq: u8) void {
         0 => {
             scheduler.tick();
             if (builtin.target.cpu.arch == .x86_64 or builtin.target.cpu.arch == .aarch64) {
-                @import("../subsystems/win32/desktop_session.zig").onTimerIrq();
+                @import("../subsystems/zircon64/desktop_session.zig").onTimerIrq();
             }
         },
         1 => {

@@ -4,5 +4,6 @@ pub const interrupt = @import("interrupt.zig");
 pub const timer = @import("timer.zig");
 pub const scheduler = @import("scheduler.zig");
 pub const sync = @import("sync.zig");
+pub const irql = @import("irql.zig");
 
 pub fn initStub() void {}

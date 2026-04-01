@@ -20,7 +20,7 @@ const se_mod = @import("se/mod.zig");
 const gre_early = if (builtin.target.cpu.arch == .x86_64 or
     builtin.target.cpu.arch == .aarch64 or
     builtin.target.cpu.arch == .loongarch64)
-    @import("subsystems/win32/gre_early.zig")
+    @import("subsystems/zircon64/gre_early.zig")
 else
     struct {
         pub fn initAfterBoot(_: u32, _: usize) void {}
@@ -43,14 +43,17 @@ comptime {
         .riscv64 => _ = @import("arch/riscv64/mod.zig"),
         .loongarch64 => _ = @import("arch/loongarch64/mod.zig"),
         .mips64el => _ = @import("arch/mips64el/mod.zig"),
-        .x86_64 => _ = @import("arch/x86_64/mod.zig"),
+        .x86_64 => {
+            _ = @import("arch/x86_64/mod.zig");
+            _ = @import("arch/x86_64/zircon_syscall_table.zig");
+        },
         else => {},
     }
     if (builtin.target.cpu.arch == .x86_64 or
         builtin.target.cpu.arch == .aarch64 or
         builtin.target.cpu.arch == .loongarch64)
     {
-        _ = @import("subsystems/win32/mod.zig");
+        _ = @import("subsystems/zircon64/mod.zig");
     }
     _ = @import("config/config.zig");
     _ = @import("config/defaults.zig");
@@ -62,11 +65,12 @@ comptime {
     _ = @import("io/mod.zig");
     _ = @import("lpc/mod.zig");
     _ = @import("fs/mod.zig");
+    _ = @import("boot/zircon_boot_context.zig");
     _ = @import("loader/mod.zig");
     _ = @import("libs/ntdll.zig");
-    _ = @import("libs/kernel32.zig");
-    _ = @import("libs/user32.zig");
-    _ = @import("libs/gdi32.zig");
+    _ = @import("libs/zircon64_kernel_api.zig");
+    _ = @import("libs/zircon64_user_api.zig");
+    _ = @import("libs/zircon64_gdi_api.zig");
     _ = @import("classic/resources/mod.zig");
     _ = @import("servers/server.zig");
     _ = @import("servers/smss.zig");
@@ -118,9 +122,28 @@ fn startMultibootKernel(magic: u32, info_addr: usize) noreturn {
         klog.info("Phase 1: GDT/TSS initialized (kernel stack=0x%x)", .{kernel_stack_addr});
     }
 
+    if (builtin.target.cpu.arch == .x86_64) {
+        @import("hal/x86_64/cpu_extensions.zig").initAfterPagingReady();
+    }
+
     const stack_top_addr = @intFromPtr(&stack_top);
     const kernel_end = ((stack_top_addr + (4 * 1024 * 1024) - 1) / (4 * 1024 * 1024)) * (4 * 1024 * 1024);
     const boot_info = boot.parse(magic, info_addr);
+    if (boot_info) |bi| {
+        @import("boot/zircon_boot_context.zig").setFromMultiboot2(bi);
+        if (bi.acpi_rsdp_phys) |rp| {
+            klog.info("Phase 1: ACPI RSDP (Multiboot2 tag) at phys 0x%x", .{rp});
+        }
+    }
+
+    if (builtin.target.cpu.arch == .x86_64) {
+        @import("hal/x86_64/acpi_early.zig").validateAndLogFromBootContext();
+        @import("hal/x86_64/lapic_early.zig").enableLocalApic();
+        @import("hal/x86_64/hpet_probe.zig").logStub();
+        @import("hal/x86_64/lapic_timer_stub.zig").logTimerStub();
+        @import("hal/x86_64/pci_ecam.zig").initStubFromMcfg();
+        @import("arch/x86_64/zircon_syscall_table.zig").initExecutive();
+    }
 
     var frame_alloc: frame_mod.FrameAllocator = undefined;
     frame_alloc.init(boot_info, kernel_end, info_addr);
@@ -192,7 +215,7 @@ fn startMultibootKernel(magic: u32, info_addr: usize) noreturn {
     if (builtin.target.cpu.arch == .x86_64 or builtin.target.cpu.arch == .aarch64) {
         if (@import("build_options").enable_idt) {
             klog.info("Phase P5+: GRE desktop session (SMSS→CSRSS, int-driven clock)", .{});
-            const desktop_session = @import("subsystems/win32/desktop_session.zig");
+            const desktop_session = @import("subsystems/zircon64/desktop_session.zig");
             desktop_session.runSessionLoop();
         }
     } else if (builtin.target.cpu.arch == .loongarch64) {
@@ -200,7 +223,7 @@ fn startMultibootKernel(magic: u32, info_addr: usize) noreturn {
         // LoongArch：CSR 定时器中断里 poll virtio-input，主循环 `idle` 可低功耗唤醒。
         if (fb.isReady()) {
             klog.info("Phase P5+: LoongArch64 GRE desktop (ramfb/virtio-gpu + timer IRQ + virtio-hid)", .{});
-            const desktop_session = @import("subsystems/win32/desktop_session.zig");
+            const desktop_session = @import("subsystems/zircon64/desktop_session.zig");
             desktop_session.runSessionLoop();
         }
         if (!fb.isReady()) {

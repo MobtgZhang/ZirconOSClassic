@@ -3,10 +3,11 @@
 const klog = @import("../rtl/klog.zig");
 
 pub const fat = @import("fat.zig");
+pub const gpt = @import("gpt.zig");
 
 pub fn initExecutive() void {
     fat.initReadOnlyStubs();
-    klog.info("FS: VFS executive init", .{});
+    klog.info("FS: VFS executive init (GPT helpers in fs/gpt.zig)", .{});
 }
 
 pub fn initStub() void {

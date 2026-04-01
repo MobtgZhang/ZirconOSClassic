@@ -35,4 +35,4 @@
 
 ## 本仓库上游
 
-- [ZirconOS](https://github.com/MobtgZhang/ZirconOS) — 完整内核、Win32 子系统与桌面主题，可作为移植源。
+- [ZirconOS](https://github.com/MobtgZhang/ZirconOS) — 完整内核与图形/会话子系统、桌面主题，可作为移植源；本 Classic 分支对外以 **Zircon64** 命名用户态子系统。

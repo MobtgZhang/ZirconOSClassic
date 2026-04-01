@@ -2,14 +2,14 @@
 
 const klog = @import("../rtl/klog.zig");
 const ntdll = @import("../libs/ntdll.zig");
-const kernel32 = @import("../libs/kernel32.zig");
+const zc_kernel_api = @import("../libs/zircon64_kernel_api.zig");
 const csrss_mod = @import("csrss.zig");
 
 pub fn runBootstrapSequence() void {
     klog.info("SMSS: step 1 — Session 0 bootstrap", .{});
     klog.info("SMSS: step 2 — native baseline libraries", .{});
     ntdll.logSubsystemVersion();
-    kernel32.logSubsystemVersion();
+    zc_kernel_api.logSubsystemVersion();
     klog.info("SMSS: step 3 — CSRSS on LPC ApiPort", .{});
     csrss_mod.bootstrapAfterSmss();
     klog.info("SMSS: step 4 — continue to desktop GRE / shell", .{});
