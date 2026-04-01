@@ -1,5 +1,5 @@
-//! 多架构桌面像素尺寸约定：LoongArch ramfb 固定用此分辨率；与 QEMU x86_64 + OVMF 常见 GOP（1280×800）对齐。
-//! x86_64 仍由 Multiboot2 tag 8（固件 GOP）决定实际尺寸；若需完全一致可在固件侧设相同模式。
-pub const width: u32 = 1280;
-pub const height: u32 = 800;
+//! LoongArch ramfb / virtio-gpu 后备帧缓冲的像素约定（与 ZBM 在 GOP 上优先设置的 1024×768×32 一致）。
+//! 本文件仅被 `src/hal/loongarch64/*` 引用；x86_64 仍由 Multiboot2 tag 8（固件 GOP）决定实际尺寸。
+pub const width: u32 = 1024;
+pub const height: u32 = 768;
 pub const stride: u32 = width * 4;

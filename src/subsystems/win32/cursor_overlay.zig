@@ -1,4 +1,5 @@
 //! 软件鼠标：保存光标下像素、移动后恢复再绘制（热点左上角）。
+//! 自研路径，对应仓库内 `idea1.md` 对「软件光标 / save-under」的概念说明；**不含**微软显示驱动或 WDK 示例代码。
 
 const fb = @import("../../hal/fb_console.zig");
 const res = @import("../../classic/resources/mod.zig");

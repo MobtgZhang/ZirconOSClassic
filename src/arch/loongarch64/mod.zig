@@ -1,5 +1,6 @@
 //! LoongArch64 — `_start` in crt0.S；UEFI 经 `.uefi_vector` 直入 `kernel_main` + Multiboot2（见 docs/BOOT_ABI.md）。
 const uart = @import("../../hal/loongarch64/uart.zig");
+const interrupt_la = @import("interrupt.zig");
 
 pub const boot = @import("boot.zig");
 
@@ -57,4 +58,22 @@ pub fn parkSecondaryCpusIfNeeded() void {
             asm volatile ("idle 0");
         }
     }
+}
+
+pub fn initTimer() void {
+    interrupt_la.initTimerAndTrap();
+}
+
+pub fn enableInterrupts() void {
+    interrupt_la.enableInterrupts();
+}
+
+/// 每来一次 CSR 定时器中断 +1；`desktop_session` 在消息泵里消费并调用 `onTimerIrq`（避免 mod→desktop_session→arch 循环依赖）。
+pub var loongarch_timer_ticks: u64 = 0;
+
+export fn loongarchTrapHandler() callconv(.c) void {
+    interrupt_la.clearTimerInterruptOrHalt();
+    @import("../../hal/loongarch64/virtio_hid.zig").Input.poll();
+    @import("../../ke/scheduler.zig").tick();
+    loongarch_timer_ticks +%= 1;
 }

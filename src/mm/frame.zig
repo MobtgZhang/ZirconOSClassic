@@ -1,6 +1,9 @@
 //! Physical Frame Allocator
 //! Bitmap-based management of available physical pages
 //! NT style: kernel provides physical memory allocation mechanism
+//!
+//! **x86_64 MMIO**：OVMF/ZBM 启动下常见全低位物理 1:1 映射，PCI BAR（virtio-gpu、Intel iGPU）直接 `*volatile` 访问。
+//! 若将来内核重分页且未覆盖设备区，须在页表为对应物理页设 UC（见 `hal/x86_64/intel_display_future.zig`）。
 
 const builtin = @import("builtin");
 const arch = @import("../arch.zig");

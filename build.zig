@@ -93,6 +93,7 @@ pub fn build(b: *std.Build) void {
     } else if (cpu_arch == .loongarch64) {
         kernel_exe.addAssemblyFile(b.path("src/arch/loongarch64/crt0.S"));
         kernel_exe.addAssemblyFile(b.path("src/arch/loongarch64/uefi_vector.S"));
+        kernel_exe.addAssemblyFile(b.path("src/arch/loongarch64/trap_entry.S"));
     }
 
     // kernel 步骤必须安装到 zig-out/bin，供 ZBM / make run 读取（仅编译不会复制产物）。

@@ -116,6 +116,7 @@ pub fn tryInitFramebuffer() bool {
     }
 
     fb.initEx(RESERVED_BASE, dfs.width, dfs.height, dfs.stride, 32, true);
+    @import("virtio_hid.zig").Input.syncPointerAfterFramebufferChange();
     klog.info("ramfb: linear FB %ux%u @0x%x (QEMU ramfb)", .{ dfs.width, dfs.height, RESERVED_BASE });
     return true;
 }

@@ -111,6 +111,11 @@ fi
 case "$ARCH" in
   x86_64)
     read -r OVMF_CODE OVMF_VARS < <(ensure_edk2_x64)
+    # 默认仍走固件 GOP；测「无 Intel、走 virtio-gpu」时：`QEMU_X86_GPU=virtio ./scripts/qemu_run.sh`
+    X86_GPU_ARGS=()
+    if [[ "${QEMU_X86_GPU:-}" == "virtio" ]]; then
+      X86_GPU_ARGS+=(-device virtio-gpu-pci)
+    fi
     exec qemu-system-x86_64 \
       -machine "q35,accel=$QEMU_ACCEL" \
       -cpu qemu64 \
@@ -119,6 +124,7 @@ case "$ARCH" in
       -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" \
       -drive "if=pflash,format=raw,file=$OVMF_VARS" \
       -drive "if=virtio,format=raw,file=fat:rw:$ESP_ROOT" \
+      "${X86_GPU_ARGS[@]}" \
       "$@"
     ;;
   aarch64)
@@ -158,15 +164,17 @@ case "$ARCH" in
       -device nec-usb-xhci,id=la_xhci
       -device "usb-kbd,bus=la_xhci.0"
       -boot "menu=on,strict=off,order=d")
-    # ramfb：fw_cfg 线性帧缓冲；virtio-gpu-pci：固件 GOP（你日志里 640×480 即此路径）。
-    # virtio-input：QEMU 仅在 `display=` 指向**当前窗口所用的图形设备**时才 bind UI 指针/键盘；
-    # 否则 `qemu_input_handler_bind` 不执行，客户机 virtqueue 永远收不到 REL 事件（指针居中但不动）。
+    # QEMU virtio_input_hid：只有设置了 `display=<图形设备 id>` 才会 qemu_input_handler_bind，否则窗口无事件。
+    # 指针用 **virtio-tablet**（ABS）：窗口模式下比 REL 鼠标可靠；勿再挂 virtio-mouse，以免同一 UI 事件重复进两台 1af4:1052。
+    # **display= 必须与下面某一 `-device …,id=…` 完全一致**：默认 `la_gpu` 对应 `virtio-gpu-pci,id=la_gpu`；
+    # 若改 `QEMU_LA_INPUT_DISPLAY=la_ramfb` 则须与 `ramfb,id=la_ramfb` 一致，否则键鼠无 UI 事件、指针不更新。
+    LA_INPUT_DISP="${QEMU_LA_INPUT_DISPLAY:-la_gpu}"
     if [[ "${QEMU_LA_GPU:-1}" == "1" ]]; then
       LA_QEMU+=(-device ramfb,id=la_ramfb -device virtio-gpu-pci,id=la_gpu)
-      LA_QEMU+=(-device virtio-keyboard-pci,display=la_gpu -device virtio-mouse-pci,display=la_gpu)
+      LA_QEMU+=(-device "virtio-keyboard-pci,display=$LA_INPUT_DISP" -device "virtio-tablet-pci,id=la_tablet,display=$LA_INPUT_DISP")
     else
       LA_QEMU+=(-display none)
-      LA_QEMU+=(-device virtio-keyboard-pci -device virtio-mouse-pci)
+      LA_QEMU+=(-device virtio-keyboard-pci -device virtio-tablet-pci)
     fi
     if [[ "${QEMU_LA_MONITOR:-}" == "none" ]]; then
       LA_QEMU+=(-monitor none)

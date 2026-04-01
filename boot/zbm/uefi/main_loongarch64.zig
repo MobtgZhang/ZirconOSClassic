@@ -445,6 +445,36 @@ fn displayBootProgress(out: anytype) void {
     puts(out, "\r\n");
 }
 
+/// LoongArch QEMU/OVMF 常见默认 GOP 较小；在 ExitBootServices 前尽量切到 1024×768 的线性帧缓冲模式。
+fn trySetLoongArchPreferredGop(gop: *uefi.protocol.GraphicsOutput, out: anytype) void {
+    const want_w: u32 = 1024;
+    const want_h: u32 = 768;
+
+    const cur = gop.mode.info.*;
+    if (cur.horizontal_resolution == want_w and cur.vertical_resolution == want_h) {
+        switch (cur.pixel_format) {
+            .blt_only => {},
+            else => return,
+        }
+    }
+
+    const max_mode = gop.mode.max_mode;
+    var mi: u32 = 0;
+    while (mi < max_mode) : (mi += 1) {
+        const minfo = gop.queryMode(mi) catch continue;
+        if (minfo.horizontal_resolution != want_w or minfo.vertical_resolution != want_h)
+            continue;
+        switch (minfo.pixel_format) {
+            .blt_only => continue,
+            else => {},
+        }
+        gop.setMode(mi) catch continue;
+        puts(out, "    [*] GOP: switched to 1024x768 (linear framebuffer)\r\n");
+        return;
+    }
+    puts(out, "    [!] GOP: no 1024x768 linear mode; using firmware default\r\n");
+}
+
 fn queryGopFramebuffer(out: anytype, bs: *uefi.tables.BootServices) ?boot_info.GopFbInfo {
     const gop_opt = bs.locateProtocol(uefi.protocol.GraphicsOutput, null) catch {
         puts(out, "    [!] GraphicsOutput protocol not found (add virtio-gpu in QEMU for linear FB)\r\n");
@@ -454,6 +484,8 @@ fn queryGopFramebuffer(out: anytype, bs: *uefi.tables.BootServices) ?boot_info.G
         puts(out, "    [!] GraphicsOutput handle is null\r\n");
         return null;
     };
+
+    trySetLoongArchPreferredGop(gop, out);
 
     const mode = gop.mode;
     const info = mode.info;

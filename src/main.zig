@@ -135,6 +135,19 @@ fn startMultibootKernel(magic: u32, info_addr: usize) noreturn {
     ke_sync.initExecutive();
     se_mod.initExecutive();
 
+    // LoongArch：先 ramfb（fw_cfg）；若无线性 FB 再试 virtio-gpu（`execGpu` 有自旋上限，TCG 下仍可能略慢）。
+    // 另有 UEFI GOP → Multiboot2 tag 8，由 `gre_early` 设置。
+    if (builtin.target.cpu.arch == .loongarch64) {
+        const la_ramfb = @import("hal/loongarch64/ramfb.zig");
+        _ = la_ramfb.tryInitFramebuffer();
+        if (!@import("hal/fb_console.zig").isReady()) {
+            @import("hal/loongarch64/virtio_gpu.zig").tryInitQemuVirtioGpuFramebuffer();
+        }
+    }
+    if (builtin.target.cpu.arch == .x86_64) {
+        @import("hal/display/bootstrap.zig").tryInitEarlyDisplay();
+    }
+
     if (@import("build_options").enable_idt and @hasDecl(arch.impl, "initIdt")) {
         arch.impl.initIdt();
         klog.info("Phase 2: IDT initialized (48 vectors)", .{});
@@ -164,16 +177,12 @@ fn startMultibootKernel(magic: u32, info_addr: usize) noreturn {
     smss_mod.runBootstrapSequence();
     csrss_mod.initStub();
 
-    if (builtin.target.cpu.arch == .loongarch64) {
-        // 优先 ramfb（fw_cfg，需 QEMU `-device ramfb`）；virtio-gpu 在 TCG 下 virtqueue 轮询易超时。
-        const la_ramfb = @import("hal/loongarch64/ramfb.zig");
-        if (!la_ramfb.tryInitFramebuffer()) {
-            @import("hal/loongarch64/virtio_gpu.zig").tryInitQemuVirtioGpuFramebuffer();
-        }
-        @import("hal/loongarch64/virtio_hid.zig").init();
-    }
-
     gre_early.initAfterBoot(magic, info_addr);
+
+    if (builtin.target.cpu.arch == .loongarch64) {
+        // GRE 可能用 Multiboot2 GOP 覆盖 ramfb 尺寸/地址后再同步指针；键鼠 PCI 与 FB 解耦，放 GRE 之后更稳。
+        @import("hal/loongarch64/virtio_hid.zig").Input.init();
+    }
 
     if (@import("build_options").enable_idt) {
         const sched = @import("ke/scheduler.zig");
@@ -188,9 +197,9 @@ fn startMultibootKernel(magic: u32, info_addr: usize) noreturn {
         }
     } else if (builtin.target.cpu.arch == .loongarch64) {
         const fb = @import("hal/fb_console.zig");
-        // LoongArch 无 x86 式 IDT/PIT 桩时也应能进桌面：`virtio-hid` 靠轮询收事件，不依赖 `enable_idt`。
+        // LoongArch：CSR 定时器中断里 poll virtio-input，主循环 `idle` 可低功耗唤醒。
         if (fb.isReady()) {
-            klog.info("Phase P5+: LoongArch64 GRE desktop (ramfb/virtio-gpu + virtio-hid poll)", .{});
+            klog.info("Phase P5+: LoongArch64 GRE desktop (ramfb/virtio-gpu + timer IRQ + virtio-hid)", .{});
             const desktop_session = @import("subsystems/win32/desktop_session.zig");
             desktop_session.runSessionLoop();
         }

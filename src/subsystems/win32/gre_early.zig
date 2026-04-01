@@ -36,19 +36,27 @@ pub fn initAfterBoot(magic: u32, info_addr: usize) void {
             fbi.fb_type,
         });
 
-        fbmod.initEx(
-            @intCast(fbi.addr),
-            fbi.width,
-            fbi.height,
-            fbi.pitch,
-            fbi.bpp,
-            fbi.pixel_bgr != 0,
-        );
-        if (builtin.target.cpu.arch == .loongarch64) {
-            @import("../../hal/loongarch64/virtio_hid.zig").syncPointerWithFramebuffer();
+        // LoongArch + UEFI：ZBM 常同时带 ramfb 与 GOP tag。若保留 ramfb 地址而屏上实际扫描的是 GOP 物理区，会出现「进不了桌面/黑屏」。
+        // x86 上 virtio-gpu 后备缓冲在内核 BSS，必须用 scanout，不可被 GOP tag 覆盖。
+        const keep_driver_fb = fbmod.isReady() and builtin.target.cpu.arch != .loongarch64;
+
+        if (keep_driver_fb) {
+            klog.info("gre: framebuffer already active (e.g. virtio-gpu), not replacing with GOP tag", .{});
+        } else {
+            fbmod.initEx(
+                @intCast(fbi.addr),
+                fbi.width,
+                fbi.height,
+                fbi.pitch,
+                fbi.bpp,
+                fbi.pixel_bgr != 0,
+            );
+            if (builtin.target.cpu.arch == .loongarch64) {
+                @import("../../hal/loongarch64/virtio_hid.zig").Input.syncPointerAfterFramebufferChange();
+            }
         }
     } else if (fbmod.isReady()) {
-        klog.info("gre: linear FB from arch driver (e.g. LoongArch virtio-gpu)", .{});
+        klog.info("gre: linear FB from arch driver (e.g. virtio-gpu / ramfb)", .{});
     } else {
         klog.info("gre: no framebuffer tag (serial-only session)", .{});
         return;
